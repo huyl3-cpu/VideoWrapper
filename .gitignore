@@ -12,3 +12,5 @@ tools/
 convert_*
 *.pt
 *.pth
+wanvideo_silent_patch.zip
+package_patch.py

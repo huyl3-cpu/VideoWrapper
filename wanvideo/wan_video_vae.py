@@ -1064,7 +1064,7 @@ class VideoVAE_(nn.Module):
         except:
             pass
 
-        for i in tqdm(range(iter_), desc="WanVAE encoding frames", disable=not pbar):
+        for i in tqdm(range(iter_), desc="WanVAE encoding frames", disable=True):
             self._enc_conv_idx = [0]
             if i == 0:
                 out = self.encoder(x[:, :, :1, :, :],
@@ -1140,7 +1140,7 @@ class VideoVAE_(nn.Module):
         except:
             pass
         x = self.conv2(z)
-        for i in tqdm(range(iter_), desc="WanVAE decoding frames", disable=not pbar):
+        for i in tqdm(range(iter_), desc="WanVAE decoding frames", disable=True):
             self._conv_idx = [0]
             if i == 0:
                 out = self.decoder(x[:, :, i:i + 1, :, :],
@@ -1255,7 +1255,7 @@ class WanVideoVAE(nn.Module):
         weight, values = None, None
         if pbar:
             pbar = ProgressBar(len(tasks))
-        for h, h_, w, w_ in tqdm(tasks, desc="VAE decoding"):
+        for h, h_, w, w_ in tqdm(tasks, desc="VAE decoding", disable=True):
             hidden_states_batch = hidden_states[:, :, :, h:h_, w:w_].to(computation_device)
             if end_:
                 hidden_states_batch = self.model.decode_2(hidden_states_batch).to(data_device)
@@ -1325,7 +1325,7 @@ class WanVideoVAE(nn.Module):
         values = torch.zeros((1, self.z_dim, out_T, H // self.upsampling_factor, W // self.upsampling_factor), dtype=video.dtype, device=data_device)
         if pbar:
             pbar = ProgressBar(len(tasks))
-        for h, h_, w, w_ in tqdm(tasks, desc="VAE encoding"):
+        for h, h_, w, w_ in tqdm(tasks, desc="VAE encoding", disable=True):
             hidden_states_batch = video[:, :, :, h:h_, w:w_].to(computation_device)
             if end_:
                 hidden_states_batch = self.model.encode_2(hidden_states_batch).to(data_device)
@@ -1471,7 +1471,7 @@ class VideoVAE38_(VideoVAE_):
         iter_ = 1 + (t - 1) // 4
         if pbar:
             pbar = ProgressBar(iter_)
-        for i in tqdm(range(iter_), desc="WanVAE encoding frames", disable=not pbar):
+        for i in tqdm(range(iter_), desc="WanVAE encoding frames", disable=True):
             self._enc_conv_idx = [0]
             if i == 0:
                 out = self.encoder(x[:, :, :1, :, :],
@@ -1510,7 +1510,7 @@ class VideoVAE38_(VideoVAE_):
         if pbar:
             pbar = ProgressBar(iter_)
         x = self.conv2(z)
-        for i in tqdm(range(iter_), desc="WanVAE decoding frames", disable=not pbar):
+        for i in tqdm(range(iter_), desc="WanVAE decoding frames", disable=True):
             self._conv_idx = [0]
             if i == 0:
                 out = self.decoder(x[:, :, i:i + 1, :, :],

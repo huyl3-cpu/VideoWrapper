@@ -650,7 +650,7 @@ class WanVideoClipVisionEncode:
                     pixel_values = clip_preprocess(negative_image.to(device), size=224, mean=image_mean, std=image_std, crop=(not crop == "disabled")).float()
                     negative_clip_embeds = clip_vision.visual(pixel_values)
     
-        log.info(f"Clip embeds shape: {clip_embeds.shape}, dtype: {clip_embeds.dtype}")
+        #log.info(f"Clip embeds shape: {clip_embeds.shape}, dtype: {clip_embeds.dtype}")
 
         weighted_embeds = []
         weighted_embeds.append(clip_embeds[0:1] * strength_1)
@@ -676,7 +676,7 @@ class WanVideoClipVisionEncode:
             clip_embeds = weighted_embeds[0]
                 
 
-        log.info(f"Combined clip embeds shape: {clip_embeds.shape}")
+        #log.info(f"Combined clip embeds shape: {clip_embeds.shape}")
         
         if force_offload:
             clip_vision.model.to(offload_device)

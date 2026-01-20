@@ -955,7 +955,7 @@ class WanVideoSampler:
 
         freqs = None
 
-        log.info(f"Rope function: {rope_function}")
+        # log.info(f"Rope function: {rope_function}")
 
         riflex_freq_index = 0 if riflex_freq_index is None else riflex_freq_index
         transformer.rope_embedder.k = None
@@ -1199,13 +1199,13 @@ class WanVideoSampler:
                         if not control_start_percent <= current_step_percentage <= control_end_percent:
                             control_lora_enabled = False
                             if patcher.model.is_patched:
-                                log.info("Unloading LoRA...")
+                                #log.info("Unloading LoRA...")
                                 patcher.unpatch_model(device)
                                 patcher.model.is_patched = False
                         else:
                             image_cond_input = control_latents.to(z)
                             if not patcher.model.is_patched:
-                                log.info("Loading LoRA...")
+                                #log.info("Loading LoRA...")
                                 patcher = apply_lora(patcher, device, device, low_mem_load=False, control_lora=True)
                                 patcher.model.is_patched = True
 
@@ -1702,8 +1702,9 @@ class WanVideoSampler:
         callback = prepare_callback(patcher, len(timesteps))
 
         if not multitalk_sampling and not framepack and not wananimate_loop:
-            log.info("-" * 10 + " Sampling start " + "-" * 10)
-            log.info(f"{(latent_video_length-1) * 4 + 1} frames at {latent.shape[3]*vae_upscale_factor}x{latent.shape[2]*vae_upscale_factor} (Input sequence length: {seq_len}) with {steps-ttm_start_step} steps")
+            pass
+            # log.info("-" * 10 + " Sampling start " + "-" * 10)
+            # log.info(f"{(latent_video_length-1) * 4 + 1} frames at {latent.shape[3]*vae_upscale_factor}x{latent.shape[2]*vae_upscale_factor} (Input sequence length: {seq_len}) with {steps-ttm_start_step} steps")
 
 
         # Differential diffusion prep
@@ -1788,7 +1789,7 @@ class WanVideoSampler:
             try:
                 pbar = ProgressBar(len(timesteps) - ttm_start_step)
                 #region main loop start
-                for idx, t in enumerate(tqdm(timesteps[ttm_start_step:], disable=multitalk_sampling or wananimate_loop)):
+                for idx, t in enumerate(tqdm(timesteps[ttm_start_step:], disable=True)):
 
                     if bidirectional_sampling:
                         latent_flipped = torch.flip(latent, dims=[1])
@@ -2596,7 +2597,7 @@ class WanVideoSampler:
         if story_mem_latents is not None:
             latent = latent[:, story_mem_latents.shape[1]:]
 
-        log.info("-" * 10 + " Sampling end " + "-" * 12)
+        # log.info("-" * 10 + " Sampling end " + "-" * 12)
 
         cache_states = None
         if cache_args is not None:

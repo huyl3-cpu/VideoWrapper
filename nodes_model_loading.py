@@ -760,7 +760,7 @@ class WanVideoSetLoRAs:
 
         patcher.model_options['transformer_options']["lora_scheduling_enabled"] = False
         for l in lora:
-            log.info(f"Loading LoRA: {l['name']} with strength: {l['strength']}")
+            #log.info(f"Loading LoRA: {l['name']} with strength: {l['strength']}")
             lora_path = l["path"]
             lora_strength = l["strength"]
             if isinstance(lora_strength, list):
@@ -864,13 +864,13 @@ def load_weights(transformer, sd=None, weight_dtype=None, base_dtype=None,
             )
             transformer.gguf_patched = True
     else:
-        log.info("Loading and assigning model weights to device...")
+        #log.info("Loading and assigning model weights to device...")
     named_params = transformer.named_parameters()
 
     for name, param in tqdm(named_params,
             desc=f"Loading transformer parameters to {transformer_load_device}",
             total=param_count,
-            leave=True):
+            leave=True, disable=True):
         block_idx = vace_block_idx = None
         if name.startswith("vace_blocks."):
             try:
@@ -927,14 +927,15 @@ def load_weights(transformer, sd=None, weight_dtype=None, base_dtype=None,
     #[print(name, param.device, param.dtype) for name, param in transformer.named_parameters()]
     memory_on_device = get_module_memory_mb_per_device(transformer)
     log.info("-" * 25)
-    log.info("Transformer weights loaded:")
+    #log.info("Transformer weights loaded:")
     for dev, mem_mb in memory_on_device.items():
-        log.info(f"Device: {dev:8s} | Memory: {mem_mb:,.2f} MB")
+        pass
+        #log.info(f"Device: {dev:8s} | Memory: {mem_mb:,.2f} MB")
 
     pbar.update_absolute(0)
 
 def patch_control_lora(transformer, device):
-    log.info("Control-LoRA detected, patching model...")
+    #log.info("Control-LoRA detected, patching model...")
 
     in_cls = transformer.patch_embedding.__class__ # nn.Conv3d
     old_in_dim = transformer.in_dim # 16
@@ -959,7 +960,7 @@ def patch_control_lora(transformer, device):
 
 def patch_stand_in_lora(transformer, lora_sd, transformer_load_device, base_dtype, lora_strength):
     if "diffusion_model.blocks.0.self_attn.q_loras.down.weight" in lora_sd:
-        log.info("Stand-In LoRA detected")
+        #log.info("Stand-In LoRA detected")
         for block in transformer.blocks:
             block.self_attn.q_loras = LoRALinearLayer(transformer.dim, transformer.dim, rank=128, device=transformer_load_device, dtype=base_dtype, strength=lora_strength)
             block.self_attn.k_loras = LoRALinearLayer(transformer.dim, transformer.dim, rank=128, device=transformer_load_device, dtype=base_dtype, strength=lora_strength)
@@ -976,7 +977,7 @@ def add_lora_weights(patcher, lora, base_dtype, merge_loras=False):
     control_lora=False
     #spacepxl's control LoRA patch
     for l in lora:
-        log.info(f"Loading LoRA: {l['name']} with strength: {l['strength']}")
+        #log.info(f"Loading LoRA: {l['name']} with strength: {l['strength']}")
         lora_path = l["path"]
         lora_strength = l["strength"]
         if isinstance(lora_strength, list):
@@ -984,12 +985,12 @@ def add_lora_weights(patcher, lora, base_dtype, merge_loras=False):
                 raise ValueError("LoRA strength should be a single value when merge_loras=True")
             patcher.model.diffusion_model.lora_scheduling_enabled = True
         if lora_strength == 0:
-            log.warning(f"LoRA {lora_path} has strength 0, skipping...")
+            #log.warning(f"LoRA {lora_path} has strength 0, skipping...")
             continue
         lora_sd = load_torch_file(lora_path, safe_load=True)
         if "dwpose_embedding.0.weight" in lora_sd: #unianimate
             from .unianimate.nodes import update_transformer
-            log.info("Unianimate LoRA detected, patching model...")
+            #log.info("Unianimate LoRA detected, patching model...")
             patcher.model.diffusion_model, unianimate_sd = update_transformer(patcher.model.diffusion_model, lora_sd)
         if "base_model.model.blocks.0.cross_attn.k.lora_A.weight" in lora_sd: # assume rs_lora
                 lora_sd = compensate_rs_lora_format(lora_sd)
@@ -1214,7 +1215,7 @@ class WanVideoModelLoader:
         if torch.cuda.is_available():
             #only warning for now
             major, minor = torch.cuda.get_device_capability(device)
-            log.info(f"CUDA Compute Capability: {major}.{minor}")
+            #log.info(f"CUDA Compute Capability: {major}.{minor}")
             if compile_args is not None and "e4" in quantization and (major, minor) < (8, 9):
                 log.warning("WARNING: Torch.compile with fp8_e4m3fn weights on CUDA compute capability < 8.9 may not be supported. Please use fp8_e5m2, GGUF or higher precision instead, or check the latest triton version that adds support for older architectures https://github.com/woct0rdho/triton-windows/releases/tag/v3.5.0-windows.post21")
 
@@ -1264,7 +1265,7 @@ class WanVideoModelLoader:
 
         in_features = sd["blocks.0.self_attn.k.weight"].shape[1]
         out_features = sd["blocks.0.self_attn.k.weight"].shape[0]
-        log.info(f"Detected model in_channels: {in_channels}")
+        #log.info(f"Detected model in_channels: {in_channels}")
 
         if "blocks.0.ffn.0.bias" in sd:
             ffn_dim = sd["blocks.0.ffn.0.bias"].shape[0]
@@ -1283,13 +1284,13 @@ class WanVideoModelLoader:
         #lynx
         lynx_ip_layers = lynx_ref_layers = None
         if "blocks.0.self_attn.ref_adapter.to_k_ref.weight" in sd:
-            log.info("Lynx full reference adapter detected")
+            #log.info("Lynx full reference adapter detected")
             lynx_ref_layers = "full"
         if "blocks.0.cross_attn.ip_adapter.registers" in sd:
-            log.info("Lynx full IP adapter detected")
+            #log.info("Lynx full IP adapter detected")
             lynx_ip_layers = "full"
         elif "blocks.0.cross_attn.ip_adapter.to_v_ip.weight" in sd:
-            log.info("Lynx lite IP adapter detected")
+            #log.info("Lynx lite IP adapter detected")
             lynx_ip_layers = "lite"
 
         model_type = "t2v"
@@ -1333,7 +1334,7 @@ class WanVideoModelLoader:
                 vace_layers = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28]
             vace_in_dim = 96
 
-        log.info(f"Model cross attention type: {model_type}, num_heads: {num_heads}, num_layers: {num_layers}")
+        #log.info(f"Model cross attention type: {model_type}, num_heads: {num_heads}, num_layers: {num_layers}")
 
         teacache_coefficients_map = {
             "1_3B": {
@@ -1384,7 +1385,7 @@ class WanVideoModelLoader:
         if dim == 1536:
             model_variant = "1_3B"
         if dim == 3072:
-            log.info("5B model detected, no Teacache or MagCache coefficients available, consider using EasyCache for this model")
+            #log.info("5B model detected, no Teacache or MagCache coefficients available, consider using EasyCache for this model")
 
         if "high" in model.lower() or "low" in model.lower():
             if "i2v" in model.lower():
@@ -1392,7 +1393,7 @@ class WanVideoModelLoader:
             else:
                 model_variant = "14B_2.2"
 
-        log.info(f"Model variant detected: {model_variant}")
+        #log.info(f"Model variant detected: {model_variant}")
 
         TRANSFORMER_CONFIG= {
             "dim": dim,
@@ -1439,7 +1440,7 @@ class WanVideoModelLoader:
             transformer = WanModel(**TRANSFORMER_CONFIG).eval()
 
         if extra_audio_model:
-            log.info("Ovi extra audio model detected, initializing...")
+            #log.info("Ovi extra audio model detected, initializing...")
             TRANSFORMER_CONFIG.update({
                 "patch_size": [1],
                 "in_dim": 20,
@@ -1465,7 +1466,7 @@ class WanVideoModelLoader:
 
         #ReCamMaster
         if "blocks.0.cam_encoder.weight" in sd:
-            log.info("ReCamMaster model detected, patching model...")
+            #log.info("ReCamMaster model detected, patching model...")
             for block in transformer.blocks:
                 block.cam_encoder = nn.Linear(12, dim)
                 block.projector = nn.Linear(dim, dim)
@@ -1476,7 +1477,7 @@ class WanVideoModelLoader:
 
         # FantasyTalking https://github.com/Fantasy-AMAP
         if fantasytalking_model is not None:
-            log.info("FantasyTalking model detected, patching model...")
+            #log.info("FantasyTalking model detected, patching model...")
             context_dim = fantasytalking_model["sd"]["proj_model.proj.weight"].shape[0]
             for block in transformer.blocks:
                 block.cross_attn.k_proj = nn.Linear(context_dim, dim, bias=False)
@@ -1485,7 +1486,7 @@ class WanVideoModelLoader:
 
         # FantasyPortrait https://github.com/Fantasy-AMAP/fantasy-portrait/
         if fantasyportrait_model is not None and "blocks.0.cross_attn.emo_k_proj.weight" not in sd:
-            log.info("FantasyPortrait model detected, patching model...")
+            #log.info("FantasyPortrait model detected, patching model...")
             context_dim = fantasyportrait_model["sd"]["ip_adapter.blocks.0.cross_attn.ip_adapter_single_stream_k_proj.weight"].shape[1]
 
             with init_empty_weights():
@@ -1501,7 +1502,7 @@ class WanVideoModelLoader:
 
         # FlashPortrait
         if "blocks.0.cross_attn.emo_k_proj.weight" in sd:
-            log.info("FlashPortrait model detected, patching model...")
+            #log.info("FlashPortrait model detected, patching model...")
             context_dim = sd["blocks.0.cross_attn.emo_k_proj.weight"].shape[1]
 
             sd = {k.replace("emo_k_proj", "ip_adapter_single_stream_k_proj"): v for k, v in sd.items()}
@@ -1514,7 +1515,7 @@ class WanVideoModelLoader:
 
         if multitalk_model is not None:
             multitalk_model_type = multitalk_model.get("model_type", "MultiTalk")
-            log.info(f"{multitalk_model_type} detected, patching model...")
+            #log.info(f"{multitalk_model_type} detected, patching model...")
 
             multitalk_model_path = multitalk_model["model_path"]
             if multitalk_model_path.endswith(".gguf") and not gguf:
@@ -1556,7 +1557,7 @@ class WanVideoModelLoader:
             sd.update(extra_sd)
             del extra_sd
         elif "multitalk_audio_proj.proj1.weight" in sd:
-            log.info("MultiTalk/InfiniteTalk model detected, patching model...")
+            #log.info("MultiTalk/InfiniteTalk model detected, patching model...")
             from .multitalk.multitalk import AudioProjModel
             from .wanvideo.modules.model import WanLayerNorm
             from .LongCat.layers import SingleStreamAttention
@@ -1593,7 +1594,7 @@ class WanVideoModelLoader:
 
         # FlashVSR
         if "LQ_proj_in.norm1.gamma" in sd:
-            log.info("FlashVSR model detected, patching model...")
+            #log.info("FlashVSR model detected, patching model...")
             from .FlashVSR.LQ_proj_model import Buffer_LQ4x_Proj
             transformer.LQ_proj_in = Buffer_LQ4x_Proj(in_dim=3, out_dim=1536, layer_num=1)
 
@@ -1608,7 +1609,7 @@ class WanVideoModelLoader:
 
         # Bindweave text_projection
         if "text_projection.0.weight" in sd:
-            log.info("Bindweave model detected, adding text_projection to the model")
+            #log.info("Bindweave model detected, adding text_projection to the model")
             text_dim = sd["text_projection.0.weight"].shape[0]
             transformer.text_projection = nn.Sequential(nn.Linear(sd["text_projection.0.weight"].shape[1], text_dim), nn.GELU(approximate='tanh'), nn.Linear(text_dim, text_dim))
 
@@ -1635,7 +1636,7 @@ class WanVideoModelLoader:
 
         # SCAIL
         if "patch_embedding_pose.weight" in sd:
-            log.info("SCAIL model detected, patching model...")
+            #log.info("SCAIL model detected, patching model...")
             pose_dim = sd["patch_embedding_pose.weight"].shape[1]
             transformer.patch_embedding_pose = nn.Conv3d(pose_dim, dim, kernel_size=patch_size, stride=patch_size)
 
@@ -1646,7 +1647,7 @@ class WanVideoModelLoader:
 
             controlnet_layers = len({k.split(".")[2] for k in sd if k.startswith("controlnet.blocks.")})
             refextractor_layers = len({k.split(".")[2] for k in sd if k.startswith("refextractor.blocks.")})
-            log.info(f"{controlnet_layers} One-to-all controlnet layers and {refextractor_layers} refextractor layers detected, patching model...")
+            #log.info(f"{controlnet_layers} One-to-all controlnet layers and {refextractor_layers} refextractor layers detected, patching model...")
 
             with init_empty_weights():
                 transformer.image_to_cond = MiniEncoder2D(
