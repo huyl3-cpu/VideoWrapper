@@ -864,6 +864,7 @@ def load_weights(transformer, sd=None, weight_dtype=None, base_dtype=None,
             )
             transformer.gguf_patched = True
     else:
+        pass
         #log.info("Loading and assigning model weights to device...")
     named_params = transformer.named_parameters()
 
