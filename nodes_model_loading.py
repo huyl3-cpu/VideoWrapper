@@ -1386,6 +1386,7 @@ class WanVideoModelLoader:
         if dim == 1536:
             model_variant = "1_3B"
         if dim == 3072:
+            pass
             #log.info("5B model detected, no Teacache or MagCache coefficients available, consider using EasyCache for this model")
 
         if "high" in model.lower() or "low" in model.lower():
