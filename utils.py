@@ -7,7 +7,23 @@ from pathlib import Path
 import gc
 import types, collections
 from comfy.utils import ProgressBar, copy_to_param, set_attr_param
-from comfy.model_patcher import get_key_weight, string_to_seed
+from comfy.model_patcher import get_key_weight
+try:
+    from comfy.model_patcher import string_to_seed
+except ImportError:
+    # Fallback implementation for older/different ComfyUI versions
+    def string_to_seed(data):
+        crc = 0xFFFFFFFF
+        for byte in data:
+            if isinstance(byte, str):
+                byte = ord(byte)
+            crc ^= byte
+            for _ in range(8):
+                if crc & 1:
+                    crc = (crc >> 1) ^ 0xEDB88320
+                else:
+                    crc >>= 1
+        return crc ^ 0xFFFFFFFF
 from comfy.lora import calculate_weight
 
 from comfy.float import stochastic_rounding
