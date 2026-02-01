@@ -11,6 +11,22 @@ except:
 
 from .utils import log
 
+# Suppress SageAttention operator registration spam
+try:
+    import sys
+    import os
+    old_stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+    try:
+        import sageattention
+    finally:
+        sys.stdout.close()
+        sys.stdout = old_stdout
+    sage_version = getattr(sageattention, '__version__', 'unknown')
+    print(f"✅ SageAttention {sage_version} loaded")
+except ImportError:
+    pass  # SageAttention not installed
+
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 

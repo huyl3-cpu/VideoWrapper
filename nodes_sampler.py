@@ -2617,6 +2617,25 @@ class WanVideoSampler:
             if not model["auto_cpu_offload"]:
                 offload_transformer(transformer)
 
+        # Aggressive VRAM cleanup after sampling
+        try:
+            # Clear cache states
+            self.cache_state = None
+            if hasattr(transformer, 'easycache_state'):
+                transformer.easycache_state = None
+            if hasattr(transformer, 'teacache_state'):
+                transformer.teacache_state = None
+            if hasattr(transformer, 'magcache_state'):
+                transformer.magcache_state = None
+            # Force garbage collection
+            gc.collect()
+            # Clear CUDA cache
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+        except Exception as e:
+            log.warning(f"VRAM cleanup failed: {e}")
+
         try:
             print_memory(device)
             torch.cuda.reset_peak_memory_stats(device)
