@@ -1096,6 +1096,7 @@ class WanVideoModelLoader:
                 "fantasytalking_model": ("FANTASYTALKINGMODEL", {"default": None, "tooltip": "FantasyTalking model https://github.com/Fantasy-AMAP"}),
                 "multitalk_model": ("MULTITALKMODEL", {"default": None, "tooltip": "Multitalk model"}),
                 "fantasyportrait_model": ("FANTASYPORTRAITMODEL", {"default": None, "tooltip": "FantasyPortrait model"}),
+                "vace_model": (folder_paths.get_filename_list("unet_gguf") + folder_paths.get_filename_list("diffusion_models"), {"default": None, "tooltip": "VACE model to use when not using model that has it included, loaded from 'ComfyUI/models/diffusion_models'"}),
                 "rms_norm_function": (["default", "pytorch"], {"default": "default", "tooltip": "RMSNorm function to use, 'pytorch' is the new native torch RMSNorm, which is faster (when not using torch.compile mostly) but changes results slightly. 'default' is the original WanRMSNorm"}),
             }
         }
@@ -1225,8 +1226,20 @@ class WanVideoModelLoader:
         if "vace_blocks.0.after_proj.weight" in sd and not "patch_embedding.weight" in sd:
             raise ValueError("You are attempting to load a VACE module as a WanVideo model, instead you should use the vace_model input and matching T2V base model")
 
+        # Convert vace_model string to dict format and merge with extra_model
+        if vace_model is not None:
+            if not isinstance(vace_model, list):
+                vace_model = [{"path": folder_paths.get_full_path_or_raise("diffusion_models", vace_model)}]
+            if extra_model is None:
+                extra_model = []
+            elif not isinstance(extra_model, list):
+                extra_model = [extra_model]
+            extra_model.extend(vace_model)
+
         # currently this can be VACE, MTV-Crafter, Lynx or Ovi-audio weights
         if extra_model is not None:
+            if not isinstance(extra_model, list):
+                extra_model = [extra_model]
             for _model in extra_model:
                 log.info(f"Loading extra model: {_model['path']}")
                 if gguf:
