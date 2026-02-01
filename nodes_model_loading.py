@@ -1110,8 +1110,6 @@ class WanVideoModelLoader:
                   compile_args=None, attention_mode="sdpa", block_swap_args=None, lora=None, vram_management_args=None, extra_model=None, vace_model=None,
                   fantasytalking_model=None, multitalk_model=None, fantasyportrait_model=None, rms_norm_function="default"):
         assert not (vram_management_args is not None and block_swap_args is not None), "Can't use both block_swap_args and vram_management_args at the same time"
-        if vace_model is not None:
-            extra_model = vace_model
         lora_low_mem_load = merge_loras = False
         if lora is not None:
             merge_loras = any(l.get("merge_loras", True) for l in lora)
