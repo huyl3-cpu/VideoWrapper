@@ -373,7 +373,7 @@ class WanVideoTextEncode:
             model_state_dict = encoder.model.state_dict()
 
         params_list = list(encoder.model.named_parameters())
-        pbar = tqdm(params_list, desc="Loading T5 parameters", leave=True)
+        pbar = tqdm(params_list, desc="Loading T5 parameters", leave=True, disable=True)
         for name, param in pbar:
             dtype_to_use = dtype if any(keyword in name for keyword in params_to_keep) else cast_dtype
             value = model_state_dict[name]

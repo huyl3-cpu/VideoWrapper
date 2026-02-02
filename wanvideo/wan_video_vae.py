@@ -1064,7 +1064,7 @@ class VideoVAE_(nn.Module):
         except:
             pass
 
-        for i in tqdm(range(iter_), desc="WanVAE encoding frames", disable=not pbar):
+        for i in tqdm(range(iter_), desc="WanVAE encoding frames", disable=True):
             self._enc_conv_idx = [0]
             if i == 0:
                 out = self.encoder(x[:, :, :1, :, :],
@@ -1140,7 +1140,7 @@ class VideoVAE_(nn.Module):
         except:
             pass
         x = self.conv2(z)
-        for i in tqdm(range(iter_), desc="WanVAE decoding frames", disable=not pbar):
+        for i in tqdm(range(iter_), desc="WanVAE decoding frames", disable=True):
             self._conv_idx = [0]
             if i == 0:
                 out = self.decoder(x[:, :, i:i + 1, :, :],
