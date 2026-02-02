@@ -7,7 +7,11 @@ from pathlib import Path
 import gc
 import types, collections
 from comfy.utils import ProgressBar, copy_to_param, set_attr_param
-from comfy.model_patcher import get_key_weight, string_to_seed
+try:
+    from comfy.utils import string_to_seed  # New location (no warning)
+except ImportError:
+    from comfy.model_patcher import string_to_seed  # Fallback for older ComfyUI
+from comfy.model_patcher import get_key_weight
 from comfy.lora import calculate_weight
 
 from comfy.float import stochastic_rounding
@@ -288,7 +292,7 @@ def apply_lora(model, device_to, transformer_load_device, params_to_keep=None, d
         to_load.sort(reverse=True)
         cnt = 0
         pbar = ProgressBar(len(to_load))
-        for x in tqdm(to_load, desc="Loading model and applying LoRA weights:", leave=True):
+        for x in tqdm(to_load, desc="Loading model and applying LoRA weights:", leave=True, disable=True):
             name = x[0]
             m = x[1]
             params = x[2]

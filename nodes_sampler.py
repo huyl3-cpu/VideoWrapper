@@ -1792,7 +1792,7 @@ class WanVideoSampler:
             try:
                 pbar = ProgressBar(len(timesteps) - ttm_start_step)
                 #region main loop start
-                for idx, t in enumerate(tqdm(timesteps[ttm_start_step:], disable=multitalk_sampling or wananimate_loop)):
+                for idx, t in enumerate(tqdm(timesteps[ttm_start_step:], disable=True)):
 
                     if bidirectional_sampling:
                         latent_flipped = torch.flip(latent, dims=[1])
