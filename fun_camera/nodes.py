@@ -24,7 +24,7 @@ def custom_meshgrid(*args):
     """Copied from https://github.com/hehao13/CameraCtrl/blob/main/inference.py
     """
     # ref: https://pytorch.org/docs/stable/generated/torch.meshgrid.html?highlight=meshgrid#torch.meshgrid
-    return torch.meshgrid(*args)
+    return torch.meshgrid(*args, indexing='ij')
    
 
 def get_relative_pose(cam_params):

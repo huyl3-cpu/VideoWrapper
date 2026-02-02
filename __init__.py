@@ -9,6 +9,11 @@ try:
 except:
     pass
 
+# Suppress PyTorch warnings globally
+import warnings
+warnings.filterwarnings("ignore", message="torch.meshgrid: in an upcoming release")
+warnings.filterwarnings("ignore", message="For backend:cudaMallocAsync, resetAccumulatedStats has no effect")
+
 from .utils import log
 
 # Suppress SageAttention operator registration spam
