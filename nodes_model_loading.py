@@ -1096,7 +1096,7 @@ class WanVideoModelLoader:
                 "fantasytalking_model": ("FANTASYTALKINGMODEL", {"default": None, "tooltip": "FantasyTalking model https://github.com/Fantasy-AMAP"}),
                 "multitalk_model": ("MULTITALKMODEL", {"default": None, "tooltip": "Multitalk model"}),
                 "fantasyportrait_model": ("FANTASYPORTRAITMODEL", {"default": None, "tooltip": "FantasyPortrait model"}),
-                "vace_model": (folder_paths.get_filename_list("unet_gguf") + folder_paths.get_filename_list("diffusion_models"), {"default": None, "tooltip": "VACE model to use when not using model that has it included, loaded from 'ComfyUI/models/diffusion_models'"}),
+                "vace_model": (["None"] + folder_paths.get_filename_list("unet_gguf") + folder_paths.get_filename_list("diffusion_models"), {"default": "None", "tooltip": "VACE model to use when not using model that has it included, loaded from 'ComfyUI/models/diffusion_models'"}),
                 "rms_norm_function": (["default", "pytorch"], {"default": "default", "tooltip": "RMSNorm function to use, 'pytorch' is the new native torch RMSNorm, which is faster (when not using torch.compile mostly) but changes results slightly. 'default' is the original WanRMSNorm"}),
             }
         }
@@ -1114,6 +1114,9 @@ class WanVideoModelLoader:
         if lora is not None:
             merge_loras = any(l.get("merge_loras", True) for l in lora)
             lora_low_mem_load = any(l.get("low_mem_load", False) for l in lora)
+
+        if vace_model == "None":
+            vace_model = None
 
         transformer = None
         mm.unload_all_models()
