@@ -1199,6 +1199,8 @@ class WanVideoAnimateEmbeds:
             },),
             "pose_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.001, "tooltip": "Additional multiplier for the pose"}),
             "face_strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.001, "tooltip": "Additional multiplier for the face"}),
+            "use_bg_image": ("BOOLEAN", {"default": True, "tooltip": "Enable/disable background image input"}),
+            "use_mask": ("BOOLEAN", {"default": True, "tooltip": "Enable/disable mask input"}),
             },
             "optional": {
                 "clip_embeds": ("WANVIDIMAGE_CLIPEMBEDS", {"tooltip": "Clip vision encoded image"}),
@@ -1216,9 +1218,14 @@ class WanVideoAnimateEmbeds:
     FUNCTION = "process"
     CATEGORY = "WanVideoWrapper"
 
-    def process(self, vae, width, height, num_frames, force_offload, frame_window_size, colormatch, pose_strength, face_strength,
+    def process(self, vae, width, height, num_frames, force_offload, frame_window_size, colormatch, pose_strength, face_strength, use_bg_image, use_mask,
                 ref_images=None, pose_images=None, face_images=None, clip_embeds=None, tiled_vae=False, bg_images=None, mask=None):
         
+        # Toggle bg_images and mask based on checkboxes
+        if not use_bg_image:
+            bg_images = None
+        if not use_mask:
+            mask = None
         W = (width // 16) * 16
         H = (height // 16) * 16
 
