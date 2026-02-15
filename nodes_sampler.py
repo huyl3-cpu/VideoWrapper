@@ -44,6 +44,7 @@ class WanVideoSampler:
                 "shift": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 1000.0, "step": 0.01}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "force_offload": ("BOOLEAN", {"default": True, "tooltip": "Moves the model to the offload device after sampling"}),
+                "clear_vram": ("BOOLEAN", {"default": True, "tooltip": "Clear VRAM cache and garbage collect after sampling"}),
                 "scheduler": (scheduler_list, {"default": "unipc",}),
                 "riflex_freq_index": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1, "tooltip": "Frequency index for RIFLEX, disabled when 0, default 6. Allows for new frames to be generated after without looping"}),
             },
@@ -78,7 +79,7 @@ class WanVideoSampler:
     CATEGORY = "WanVideoWrapper"
 
     def process(self, model, image_embeds, shift, steps, cfg, seed, scheduler, riflex_freq_index, text_embeds=None,
-        force_offload=True, samples=None, feta_args=None, denoise_strength=1.0, context_options=None,
+        force_offload=True, clear_vram=True, samples=None, feta_args=None, denoise_strength=1.0, context_options=None,
         cache_args=None, teacache_args=None, flowedit_args=None, batched_cfg=False, slg_args=None, rope_function="default", loop_args=None,
         experimental_args=None, sigmas=None, unianimate_poses=None, fantasytalking_embeds=None, uni3c_embeds=None, multitalk_embeds=None, freeinit_args=None, start_step=0, end_step=-1, add_noise_to_samples=False):
         if flowedit_args is not None:
@@ -2618,23 +2619,24 @@ class WanVideoSampler:
                 offload_transformer(transformer)
 
         # Aggressive VRAM cleanup after sampling
-        try:
-            # Clear cache states
-            self.cache_state = None
-            if hasattr(transformer, 'easycache_state'):
-                transformer.easycache_state = None
-            if hasattr(transformer, 'teacache_state'):
-                transformer.teacache_state = None
-            if hasattr(transformer, 'magcache_state'):
-                transformer.magcache_state = None
-            # Force garbage collection
-            gc.collect()
-            # Clear CUDA cache
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()
-        except Exception as e:
-            log.warning(f"VRAM cleanup failed: {e}")
+        if clear_vram:
+            try:
+                # Clear cache states
+                self.cache_state = None
+                if hasattr(transformer, 'easycache_state'):
+                    transformer.easycache_state = None
+                if hasattr(transformer, 'teacache_state'):
+                    transformer.teacache_state = None
+                if hasattr(transformer, 'magcache_state'):
+                    transformer.magcache_state = None
+                # Force garbage collection
+                gc.collect()
+                # Clear CUDA cache
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
+            except Exception as e:
+                log.warning(f"VRAM cleanup failed: {e}")
 
         try:
             print_memory(device)
@@ -2720,6 +2722,7 @@ class WanVideoSamplerv2(WanVideoSampler):
                 "cfg": ("FLOAT", {"default": 6.0, "min": 0.0, "max": 30.0, "step": 0.01}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "force_offload": ("BOOLEAN", {"default": True, "tooltip": "Moves the model to the offload device after sampling"}),
+                "clear_vram": ("BOOLEAN", {"default": True, "tooltip": "Clear VRAM cache and garbage collect after sampling"}),
                 "scheduler": ("WANVIDEOSCHEDULER",),
             },
             "optional": {
