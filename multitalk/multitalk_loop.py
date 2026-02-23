@@ -406,7 +406,7 @@ def multitalk_loop(self, **kwargs):
         mm.soft_empty_cache()
         gc.collect()
         # sampling loop
-        sampling_pbar = tqdm(total=len(timesteps)-1, desc=f"Sampling audio indices {audio_start_idx}-{audio_end_idx}", position=0, leave=True)
+        sampling_pbar = tqdm(total=len(timesteps)-1, desc=f"Sampling audio indices {audio_start_idx}-{audio_end_idx}", position=0, leave=True, disable=True)
         for i in range(len(timesteps)-1):
             timestep = timesteps[i]
             latent_model_input = latent.to(device)

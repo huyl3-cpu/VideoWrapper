@@ -2131,7 +2131,7 @@ class WanVideoSampler:
                                 sample_scheduler, timesteps,_,_ = get_scheduler(scheduler, total_steps, start_step, end_step, shift, device, transformer.dim, denoise_strength, sigmas=sigmas)
 
                             latent = noise.to(device)
-                            for i, t in enumerate(tqdm(timesteps, desc=f"Sampling audio indices {left_idx}-{right_idx}", position=0)):
+                            for i, t in enumerate(tqdm(timesteps, desc=f"Sampling audio indices {left_idx}-{right_idx}", position=0, disable=True)):
                                 latent_model_input = latent.to(device)
                                 timestep = torch.tensor([t]).to(device)
                                 noise_pred, _, self.cache_state = predict_with_cfg(
