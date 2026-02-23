@@ -45,6 +45,7 @@ class WanVideoSampler:
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "force_offload": ("BOOLEAN", {"default": True, "tooltip": "Moves the model to the offload device after sampling"}),
                 "clear_vram": ("BOOLEAN", {"default": True, "tooltip": "Clear VRAM cache and garbage collect after sampling"}),
+                "clear_ram": ("BOOLEAN", {"default": True, "tooltip": "Clear RAM/VRAM aggressively after sampling, unload models and free memory to OS"}),
                 "scheduler": (scheduler_list, {"default": "unipc",}),
                 "riflex_freq_index": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1, "tooltip": "Frequency index for RIFLEX, disabled when 0, default 6. Allows for new frames to be generated after without looping"}),
             },
@@ -79,7 +80,7 @@ class WanVideoSampler:
     CATEGORY = "WanVideoWrapper"
 
     def process(self, model, image_embeds, shift, steps, cfg, seed, scheduler, riflex_freq_index, text_embeds=None,
-        force_offload=True, clear_vram=True, samples=None, feta_args=None, denoise_strength=1.0, context_options=None,
+        force_offload=True, clear_vram=True, clear_ram=True, samples=None, feta_args=None, denoise_strength=1.0, context_options=None,
         cache_args=None, teacache_args=None, flowedit_args=None, batched_cfg=False, slg_args=None, rope_function="default", loop_args=None,
         experimental_args=None, sigmas=None, unianimate_poses=None, fantasytalking_embeds=None, uni3c_embeds=None, multitalk_embeds=None, freeinit_args=None, start_step=0, end_step=-1, add_noise_to_samples=False):
         if flowedit_args is not None:
@@ -2637,6 +2638,54 @@ class WanVideoSampler:
                     torch.cuda.synchronize()
             except Exception as e:
                 log.warning(f"VRAM cleanup failed: {e}")
+
+        # Aggressive RAM cleanup after sampling (same as Video Combine A100)
+        if clear_ram:
+            import psutil
+            try:
+                # Step 1: Unload all models
+                mm.unload_all_models()
+                try:
+                    mm.free_memory(999 * 1024 * 1024 * 1024, device)
+                except:
+                    pass
+                mm.soft_empty_cache()
+            except Exception as e:
+                pass
+
+            # Step 2: Aggressive garbage collection
+            gc.collect(0)
+            gc.collect(1)
+            gc.collect(2)
+            for _ in range(5):
+                gc.collect()
+
+            # Step 3: Clear CUDA memory completely
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                try:
+                    torch.cuda.ipc_collect()
+                except:
+                    pass
+                try:
+                    torch.cuda.reset_peak_memory_stats()
+                    torch.cuda.reset_accumulated_memory_stats()
+                except:
+                    pass
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+
+            # Step 4: Force memory release to OS (Linux/Colab)
+            try:
+                import ctypes
+                libc = ctypes.CDLL("libc.so.6")
+                libc.malloc_trim(0)
+            except:
+                pass
+
+            for _ in range(3):
+                gc.collect()
 
         try:
             print_memory(device)
