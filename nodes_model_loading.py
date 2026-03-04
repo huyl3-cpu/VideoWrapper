@@ -524,7 +524,7 @@ class WanVideoLoraSelectMulti:
                 "blocks":("SELECTEDBLOCKS", ),
                 "low_mem_load": ("BOOLEAN", {"default": False, "tooltip": "Load the LORA model with less VRAM usage, slower loading. No effect if merge_loras is False"}),
                 "merge_loras": ("BOOLEAN", {"default": True, "tooltip": "Merge LoRAs into the model, otherwise they are loaded on the fly. Always disabled for GGUF and scaled fp8 models. This affects ALL LoRAs, not just the current one"}),
-
+                "suppress_lora_warnings": ("BOOLEAN", {"default": True, "tooltip": "Hide 'lora key not loaded' warning messages in console output. This affects ALL LoRAs."}),
             }
         }
 
@@ -536,7 +536,7 @@ class WanVideoLoraSelectMulti:
 
     def getlorapath(self, lora_0, strength_0, lora_1, strength_1, lora_2, strength_2,
                 lora_3, strength_3, lora_4, strength_4, blocks={}, prev_lora=None,
-                low_mem_load=False, merge_loras=True):
+                low_mem_load=False, merge_loras=True, suppress_lora_warnings=True):
         if not merge_loras:
             low_mem_load = False  # Unmerged LoRAs don't need low_mem_load
         loras_list = list(prev_lora) if prev_lora else []
@@ -559,6 +559,7 @@ class WanVideoLoraSelectMulti:
                 "layer_filter": blocks.get("layer_filter", ""),
                 "low_mem_load": low_mem_load,
                 "merge_loras": merge_loras,
+                "suppress_lora_warnings": suppress_lora_warnings,
             })
         if len(loras_list) == 0:
             return None,
