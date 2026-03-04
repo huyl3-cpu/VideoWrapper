@@ -388,6 +388,7 @@ class WanVideoLoraSelect:
                 "blocks":("SELECTEDBLOCKS", ),
                 "low_mem_load": ("BOOLEAN", {"default": False, "tooltip": "Load the LORA model with less VRAM usage, slower loading. This affects ALL LoRAs, not just the current one. No effect if merge_loras is False"}),
                 "merge_loras": ("BOOLEAN", {"default": True, "tooltip": "Merge LoRAs into the model, otherwise they are loaded on the fly. Always disabled for GGUF and scaled fp8 models. This affects ALL LoRAs, not just the current one"}),
+                "suppress_lora_warnings": ("BOOLEAN", {"default": True, "tooltip": "Hide 'lora key not loaded' warning messages in console output. This affects ALL LoRAs."}),
             },
             "hidden": {
                 "unique_id": "UNIQUE_ID",
@@ -400,7 +401,7 @@ class WanVideoLoraSelect:
     CATEGORY = "WanVideoWrapper"
     DESCRIPTION = "Select a LoRA model from ComfyUI/models/loras"
 
-    def getlorapath(self, lora, strength, unique_id, blocks={}, prev_lora=None, low_mem_load=False, merge_loras=True):
+    def getlorapath(self, lora, strength, unique_id, blocks={}, prev_lora=None, low_mem_load=False, merge_loras=True, suppress_lora_warnings=True):
         if not merge_loras:
             low_mem_load = False  # Unmerged LoRAs don't need low_mem_load
         loras_list = []
@@ -462,6 +463,7 @@ class WanVideoLoraSelect:
             "layer_filter": blocks.get("layer_filter", ""),
             "low_mem_load": low_mem_load,
             "merge_loras": merge_loras,
+            "suppress_lora_warnings": suppress_lora_warnings,
         }
         if prev_lora is not None:
             loras_list.extend(prev_lora)
@@ -710,12 +712,24 @@ def add_patches(patcher, patches, strength_patch=1.0, strength_model=1.0):
         patcher.patches_uuid = uuid.uuid4()
         return list(p)
 
-def load_lora_for_models_mod(model, lora, strength_model):
+def load_lora_for_models_mod(model, lora, strength_model, suppress_warnings=False):
     key_map = {}
     if model is not None:
         key_map = model_lora_keys_unet(model.model, key_map)
 
-    loaded = comfy.lora.load_lora(lora, key_map)
+    if suppress_warnings:
+        _lora_logger = logging.getLogger('comfy.lora')
+        _root_logger = logging.getLogger()
+        _prev_lora_level = _lora_logger.level
+        _prev_root_level = _root_logger.level
+        logging.disable(logging.WARNING)
+    try:
+        loaded = comfy.lora.load_lora(lora, key_map)
+    finally:
+        if suppress_warnings:
+            logging.disable(logging.NOTSET)
+            _lora_logger.setLevel(_prev_lora_level)
+            _root_logger.setLevel(_prev_root_level)
 
     new_modelpatcher = model.clone()
     k = add_patches(new_modelpatcher, loaded, strength_model)
@@ -787,7 +801,8 @@ class WanVideoSetLoRAs:
             if "diffusion_model.patch_embedding.lora_A.weight" in lora_sd:
                 raise NotImplementedError("Control LoRA patching is not implemented in this node.")
 
-            patcher = load_lora_for_models_mod(patcher, lora_sd, lora_strength)
+            _suppress = l.get("suppress_lora_warnings", False)
+            patcher = load_lora_for_models_mod(patcher, lora_sd, lora_strength, suppress_warnings=_suppress)
 
             del lora_sd
 
@@ -1008,7 +1023,14 @@ def add_lora_weights(patcher, lora, base_dtype, merge_loras=False):
             patch_stand_in_lora(patcher.model.diffusion_model, lora_sd, device, base_dtype, lora_strength)
         # normal LoRA patch
         else:
-            patcher, _ = load_lora_for_models(patcher, None, lora_sd, lora_strength, 0)
+            _suppress = l.get("suppress_lora_warnings", False)
+            if _suppress:
+                logging.disable(logging.WARNING)
+            try:
+                patcher, _ = load_lora_for_models(patcher, None, lora_sd, lora_strength, 0)
+            finally:
+                if _suppress:
+                    logging.disable(logging.NOTSET)
 
         del lora_sd
     return patcher, control_lora, unianimate_sd
